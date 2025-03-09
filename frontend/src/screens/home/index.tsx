@@ -63,7 +63,7 @@ export default function Home() {
 
         script.onload = () => {
             window.MathJax.Hub.Config({
-                tex2jax: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+                tex2jax: { inlineMath: [['$', '$'], ['\', '\']] },
             });
         };
 
@@ -73,7 +73,7 @@ export default function Home() {
     }, []);
 
     const renderLatexToCanvas = useCallback((expression: string, answer: string) => {
-        const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
+        const latex = `\\\LARGE{${expression} = ${answer}}\`;
         setLatexExpression((prev) => [...prev, latex]);
 
         // Clear the main canvas
@@ -102,6 +102,7 @@ export default function Home() {
         }
     };
 
+    // Mouse Drawing Functions
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (canvas) {
@@ -133,6 +134,42 @@ export default function Home() {
         setIsDrawing(false);
     };
 
+    // Touch Drawing Functions
+    const startTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+            canvas.style.background = 'black';
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                setIsDrawing(true);
+            }
+        }
+    };
+
+    const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isDrawing) return;
+
+        const canvas = canvasRef.current;
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                const touch = e.touches[0];
+                const rect = canvas.getBoundingClientRect();
+                ctx.strokeStyle = color;
+                ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+                ctx.stroke();
+            }
+        }
+    };
+
+    const stopTouch = () => {
+        setIsDrawing(false);
+    };
+
     const runRoute = async () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -153,26 +190,6 @@ export default function Home() {
                 }));
             }
         });
-
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
-        let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
-
-        for (let y = 0; y < canvas.height; y++) {
-            for (let x = 0; x < canvas.width; x++) {
-                const i = (y * canvas.width + x) * 4;
-                if (imageData.data[i + 3] > 0) { // If pixel is not transparent
-                    minX = Math.min(minX, x);
-                    minY = Math.min(minY, y);
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                }
-            }
-        }
-
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        setLatexPosition({ x: centerX, y: centerY });
 
         resp.data.forEach((data: Response) => {
             setTimeout(() => {
@@ -204,6 +221,9 @@ export default function Home() {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseOut={stopDrawing}
+                onTouchStart={startTouch}
+                onTouchMove={drawTouch}
+                onTouchEnd={stopTouch}
             />
 
             {latexExpression.map((latex, index) => (
