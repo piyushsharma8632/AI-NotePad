@@ -25,6 +25,7 @@ export default function Home() {
     const [result, setResult] = useState<GeneratedResult>();
     const [latexPosition, setLatexPosition] = useState({ x: 10, y: 200 });
     const [latexExpression, setLatexExpression] = useState<Array<string>>([]);
+    const [lastPoint, setLastPoint] = useState<{ x: number; y: number } | null>(null);
 
     useEffect(() => {
         if (latexExpression.length > 0 && window.MathJax) {
@@ -102,72 +103,61 @@ export default function Home() {
         }
     };
 
-    // Mouse Drawing Functions
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const startDrawing = (e: MouseEvent | TouchEvent) => {
+        e.preventDefault();
         const canvas = canvasRef.current;
-        if (canvas) {
-            canvas.style.background = 'black';
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.beginPath();
-                ctx.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-                setIsDrawing(true);
-            }
-        }
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+        const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        setIsDrawing(true);
+        setLastPoint({ x, y });
     };
 
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = (e: MouseEvent | TouchEvent) => {
+        e.preventDefault();
         if (!isDrawing) return;
 
         const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.strokeStyle = color;
-                ctx.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
-                ctx.stroke();
-            }
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
+        const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
+
+        if (lastPoint) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+
+            // Bézier Curve for Smoothness
+            ctx.beginPath();
+            ctx.moveTo(lastPoint.x, lastPoint.y);
+            ctx.quadraticCurveTo(
+                (lastPoint.x + x) / 2,
+                (lastPoint.y + y) / 2,
+                x,
+                y
+            );
+            ctx.stroke();
         }
+
+        setLastPoint({ x, y });
     };
 
     const stopDrawing = () => {
         setIsDrawing(false);
-    };
-
-    // Touch Drawing Functions
-    const startTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current;
-        if (canvas) {
-            canvas.style.background = 'black';
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                ctx.beginPath();
-                ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
-                setIsDrawing(true);
-            }
-        }
-    };
-
-    const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return;
-
-        const canvas = canvasRef.current;
-        if (canvas) {
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                ctx.strokeStyle = color;
-                ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
-                ctx.stroke();
-            }
-        }
-    };
-
-    const stopTouch = () => {
-        setIsDrawing(false);
+        setLastPoint(null);
     };
 
     const runRoute = async () => {
@@ -190,6 +180,26 @@ export default function Home() {
                 }));
             }
         });
+
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx!.getImageData(0, 0, canvas.width, canvas.height);
+        let minX = canvas.width, minY = canvas.height, maxX = 0, maxY = 0;
+
+        for (let y = 0; y < canvas.height; y++) {
+            for (let x = 0; x < canvas.width; x++) {
+                const i = (y * canvas.width + x) * 4;
+                if (imageData.data[i + 3] > 0) {
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        setLatexPosition({ x: centerX, y: centerY });
 
         resp.data.forEach((data: Response) => {
             setTimeout(() => {
@@ -221,22 +231,10 @@ export default function Home() {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseOut={stopDrawing}
-                onTouchStart={startTouch}
-                onTouchMove={drawTouch}
-                onTouchEnd={stopTouch}
+                onTouchStart={startDrawing}
+                onTouchMove={draw}
+                onTouchEnd={stopDrawing}
             />
-
-            {latexExpression.map((latex, index) => (
-                <Draggable
-                    key={index}
-                    defaultPosition={latexPosition}
-                    onStop={(_, data) => setLatexPosition({ x: data.x, y: data.y })}
-                >
-                    <div className="absolute p-2 text-white rounded shadow-md">
-                        <div className="latex-content">{latex}</div>
-                    </div>
-                </Draggable>
-            ))}
         </>
     );
 }
