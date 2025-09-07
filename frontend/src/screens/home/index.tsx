@@ -25,10 +25,6 @@ export default function Home() {
     const [result, setResult] = useState<GeneratedResult>();
     const [latexPosition, setLatexPosition] = useState({ x: 10, y: 200 });
     const [latexExpression, setLatexExpression] = useState<Array<string>>([]);
-<<<<<<< HEAD
-=======
-    const [lastPoint, setLastPoint] = useState<{ x: number; y: number } | null>(null);
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
 
     useEffect(() => {
         if (latexExpression.length > 0 && window.MathJax) {
@@ -67,11 +63,7 @@ export default function Home() {
 
         script.onload = () => {
             window.MathJax.Hub.Config({
-<<<<<<< HEAD
                 tex2jax: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
-=======
-                tex2jax: { inlineMath: [['$', '$'], ['\', '\']] },
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
             });
         };
 
@@ -81,11 +73,7 @@ export default function Home() {
     }, []);
 
     const renderLatexToCanvas = useCallback((expression: string, answer: string) => {
-<<<<<<< HEAD
         const latex = `\\(\\LARGE{${expression} = ${answer}}\\)`;
-=======
-        const latex = `\\\LARGE{${expression} = ${answer}}\`;
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
         setLatexExpression((prev) => [...prev, latex]);
 
         // Clear the main canvas
@@ -114,7 +102,6 @@ export default function Home() {
         }
     };
 
-<<<<<<< HEAD
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
         if (canvas) {
@@ -140,66 +127,10 @@ export default function Home() {
                 ctx.stroke();
             }
         }
-=======
-    const startDrawing = (e: MouseEvent | TouchEvent) => {
-        e.preventDefault();
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-        const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        setIsDrawing(true);
-        setLastPoint({ x, y });
-    };
-
-    const draw = (e: MouseEvent | TouchEvent) => {
-        e.preventDefault();
-        if (!isDrawing) return;
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = 'touches' in e ? e.touches[0].clientX - rect.left : e.clientX - rect.left;
-        const y = 'touches' in e ? e.touches[0].clientY - rect.top : e.clientY - rect.top;
-
-        if (lastPoint) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.lineCap = 'round';
-
-            // Bézier Curve for Smoothness
-            ctx.beginPath();
-            ctx.moveTo(lastPoint.x, lastPoint.y);
-            ctx.quadraticCurveTo(
-                (lastPoint.x + x) / 2,
-                (lastPoint.y + y) / 2,
-                x,
-                y
-            );
-            ctx.stroke();
-        }
-
-        setLastPoint({ x, y });
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
     };
 
     const stopDrawing = () => {
         setIsDrawing(false);
-<<<<<<< HEAD
-=======
-        setLastPoint(null);
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
     };
 
     const runRoute = async () => {
@@ -230,11 +161,7 @@ export default function Home() {
         for (let y = 0; y < canvas.height; y++) {
             for (let x = 0; x < canvas.width; x++) {
                 const i = (y * canvas.width + x) * 4;
-<<<<<<< HEAD
                 if (imageData.data[i + 3] > 0) { // If pixel is not transparent
-=======
-                if (imageData.data[i + 3] > 0) {
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
                     minX = Math.min(minX, x);
                     minY = Math.min(minY, y);
                     maxX = Math.max(maxX, x);
@@ -277,7 +204,6 @@ export default function Home() {
                 onMouseMove={draw}
                 onMouseUp={stopDrawing}
                 onMouseOut={stopDrawing}
-<<<<<<< HEAD
             />
 
             {latexExpression.map((latex, index) => (
@@ -291,12 +217,6 @@ export default function Home() {
                     </div>
                 </Draggable>
             ))}
-=======
-                onTouchStart={startDrawing}
-                onTouchMove={draw}
-                onTouchEnd={stopDrawing}
-            />
->>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
         </>
     );
 }
