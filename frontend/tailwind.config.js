@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
+<<<<<<< HEAD
 module.exports = {
+=======
+export default {
+>>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
   darkMode: ["class"],
   content: [
     './pages/**/*.{ts,tsx}',
@@ -74,4 +78,8 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
+<<<<<<< HEAD
 }
+=======
+};
+>>>>>>> 44963550beaf6bc1e5082599960ec462d6ac7308
